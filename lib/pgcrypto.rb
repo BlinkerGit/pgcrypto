@@ -1,3 +1,6 @@
+require 'active_record'
+require 'active_record/relation'
+require 'active_record/relation/query_methods'
 require 'active_record/connection_adapters/postgresql_adapter'
 require 'pgcrypto/has_encrypted_column'
 require 'pgcrypto/key'

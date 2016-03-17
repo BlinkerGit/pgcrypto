@@ -28,8 +28,8 @@ Gem::Specification.new do |s|
   }
 
   # Our code is built to work with Rails 4.2. Rails 5.0 will bring breaking changes.
-  s.add_dependency 'activerecord',  '~> 4.2'
-  s.add_dependency 'activesupport', '~> 4.2'
+  s.add_dependency 'activerecord',  '>= 4.2', '< 5.1'
+  s.add_dependency 'activesupport', '>= 4.2', '< 5.1'
   s.add_dependency 'pg',            '>= 0.18'
 
   s.require_paths     = %w(lib)
