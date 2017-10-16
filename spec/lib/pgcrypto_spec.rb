@@ -123,11 +123,10 @@ describe PGCrypto do
 
   describe "with the PostGIS adapter" do
     before :all do
-      gem 'activerecord-postgis-adapter', ActiveRecord::VERSION::MAJOR == 3 ? '< 0.7' : '>= 1.1'
       require 'activerecord-postgis-adapter'
       PGCrypto.keys[:private] = {:path => File.join(keypath, 'private.key')}
       PGCrypto.keys[:public] = {:path => File.join(keypath, 'public.key')}
-      PGCrypto.base_adapter = ActiveRecord::ConnectionAdapters::PostGISAdapter::MainAdapter
+      PGCrypto.base_adapter = ActiveRecord::ConnectionAdapters::PostGISAdapter
     end
 
     instance_eval(&specs)

@@ -5,14 +5,23 @@ module PGCrypto::Extensions
       base.instance_eval do
 
         # We redefine this method to correctly prepare values for encrypted columns. Original source found at
-        # https://github.com/rails/rails/blob/4-2-stable/activerecord/lib/active_record/sanitization.rb#L106
+        # https://github.com/rails/rails/blob/5-1-stable/activerecord/lib/active_record/sanitization.rb#L106
+
+        # c = connection
+        # attrs.map do |attr, value|
+        #   value = type_for_attribute(attr.to_s).serialize(value)
+        #   "#{c.quote_table_name_for_assignment(table, attr)} = #{c.quote(value)}"
+        # end.join(", ")
+
         def sanitize_sql_hash_for_assignment(attrs, table)
           c, pgc_table = connection, PGCrypto[table]
           attrs.map do |attr, value|
+            value = type_for_attribute(attr.to_s).serialize(value)
+
             if pgc_table.keys.include?(attr.to_sym) && ( key = PGCrypto.keys.public_key(pgc_table[attr.to_sym]) )
               right_side = PGCrypto::Crypt.encrypt_string( value, key, c ).to_s
             else
-              right_side = quote_bound_value(value, c, columns_hash[attr.to_s])
+              right_side = c.quote(value)
             end
             "#{c.quote_table_name_for_assignment(table, attr)} = #{right_side}"
           end.join(', ')

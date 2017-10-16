@@ -1,12 +1,15 @@
 module PGCrypto::Extensions
   module QueryMethods
-
     def self.included( base )
       base.module_eval do
 
-        # We override this method to allow ordering by an encrypted column. Original source can be found at
-        # https://github.com/rails/rails/blob/4-2-stable/activerecord/lib/active_record/relation/query_methods.rb#L1119
+        # We override this method to allow ordering by an encrypted column.
+        # Original source can be found at
+        # https://github.com/rails/rails/blob/5-1-stable/activerecord/lib/active_record/relation/query_methods.rb#L1115
         def preprocess_order_args(order_args)
+          order_args.map! do |arg|
+            klass.send(:sanitize_sql_for_order, arg)
+          end
           order_args.flatten!
           validate_order_args(order_args)
 
@@ -69,46 +72,45 @@ module PGCrypto::Extensions
             when nil
               nil
             else
-              raise "Unexpected class passed to preprocess_order_args: #{arg.class.to_s}!"
+              arg
+              # raise "Unexpected class passed to preprocess_order_args: #{arg.class.to_s}!"
             end
           end.flatten!
         end
 
-        # We override this method to preprocess any SQL fragment that was passed. Original source found at
-        # https://github.com/rails/rails/blob/4-2-stable/activerecord/lib/active_record/relation/query_methods.rb#L578
-        def where!( opts, *rest )
+        # We override this method to preprocess any SQL fragment that was
+        # passed. Original source found at
+        # https://github.com/rails/rails/blob/5-1-stable/activerecord/lib/active_record/relation/query_methods.rb#L609
+        def where!(opts, *rest)
+          opts = sanitize_forbidden_attributes(opts)
           case opts
           when Hash
-            opts = sanitize_forbidden_attributes(opts)
             references!(ActiveRecord::PredicateBuilder.references(opts))
           when String
             pgc_table = PGCrypto[table_name]
-            if pgc_table && ( columns = pgc_table.keys ).present?
+            if pgc_table && (columns = pgc_table.keys).present?
               opts = opts.dup.tap do |output|
                 columns.each do |col_name|
-                  next unless key = PGCrypto.keys.private_key( pgc_table[col_name] )
+                  next unless key = PGCrypto.keys.private_key(pgc_table[col_name])
                   pattern = Regexp.new "(?<![a-zA-Z0-9_\\.])(#{table_name}\\.)?#{col_name}(?![a-zA-Z0-9_])"
-                  output.gsub!( pattern, PGCrypto::Crypt.decrypt_column( table_name, col_name, key ).to_sql )
+                  output.gsub!(pattern, PGCrypto::Crypt.decrypt_column(table_name, col_name, key).to_sql)
                 end
               end
             end
           end
-          self.where_values += build_where(opts, rest)
+
+          self.where_clause += where_clause_factory.build(opts, rest)
           self
         end
-
       end
     end
-
   end
 end
 
 if defined? ActiveRecord::QueryMethods
-  ActiveRecord::QueryMethods.include( PGCrypto::Extensions::QueryMethods )
+  ActiveRecord::QueryMethods.include(PGCrypto::Extensions::QueryMethods)
 else
   ActiveSupport.on_load(:active_record) do
-    ActiveRecord::QueryMethods.include( PGCrypto::Extensions::QueryMethods )
+    ActiveRecord::QueryMethods.include(PGCrypto::Extensions::QueryMethods)
   end
 end
-
-
