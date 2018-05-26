@@ -11,6 +11,8 @@ module PGCrypto::Manipulation # Encapsulate the logic that manipulates AREL tree
         process_select(arel, binds)
       when Arel::UpdateManager
         process_update(arel, binds)
+      when ActiveRecord::Relation
+        process_select(arel, binds)
       end
 
       return arel, binds
