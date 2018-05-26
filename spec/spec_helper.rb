@@ -1,13 +1,12 @@
 require 'rubygems'
 require 'simplecov'
+require 'awesome_print'
 
 # Add lib/ to the load path
 $LOAD_PATH.unshift(File.expand_path(File.join('..', 'lib'), File.dirname(__FILE__)))
 
 require 'database_cleaner'
 require 'pry'
-
-gem 'activerecord', ENV.fetch('ACTIVE_RECORD_VERSION', '>= 4.0')
 require 'active_record'
 require 'pgcrypto'
 
@@ -32,16 +31,14 @@ RSpec.configure do |config|
     # Now connect to the newly created database
     ActiveRecord::Base.establish_connection(database_config)
 
-    silence_stream(STDOUT) do
-      # ...and load in the pgcrypto extension
-      ActiveRecord::Base.connection.execute(%[CREATE EXTENSION pgcrypto]) rescue nil
+    # ...and load in the pgcrypto extension
+    ActiveRecord::Base.connection.execute(%[CREATE EXTENSION pgcrypto]) rescue nil
 
-      # ...and then set up the pgcrypto_columns and pgcrypto_test_models fun
-      ActiveRecord::Schema.define do
-        create_table :pgcrypto_test_models, :force => true do |t|
-          t.string :name, :limit => 32
-          t.binary :encrypted_text
-        end
+    # ...and then set up the pgcrypto_columns and pgcrypto_test_models fun
+    ActiveRecord::Schema.define do
+      create_table :pgcrypto_test_models, :force => true do |t|
+        t.string :name, :limit => 32
+        t.binary :encrypted_text
       end
     end
 
