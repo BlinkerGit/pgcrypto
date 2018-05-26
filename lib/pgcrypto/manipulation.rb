@@ -159,7 +159,7 @@ module PGCrypto::Manipulation # Encapsulate the logic that manipulates AREL tree
       when String
         child.right = quoted_literal(child.right)
       when Arel::Nodes::Casted
-        if child.right.val.is_a(Hash)
+        if child.right.val&.is_a?(Hash)
           if child.right.val.key?(:value)
             child.right = quoted_literal(child.right.val[:value])
           else
